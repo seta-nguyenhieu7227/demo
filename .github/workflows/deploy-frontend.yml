@@ -1,0 +1,50 @@
+name: Deploy Frontend (S3)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "frontend/**"
+      - ".github/workflows/deploy-frontend.yml"
+  workflow_dispatch: {}
+
+# Sửa cho đúng của bạn (hoặc set thành GitHub Variables).
+env:
+  AWS_REGION: ap-southeast-1
+  S3_BUCKET: my-todo-frontend-bucket
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Sync static assets (cache 1 năm)
+        run: |
+          aws s3 sync frontend/ "s3://$S3_BUCKET/" \
+            --delete \
+            --exclude "index.html" --exclude "config.js" \
+            --cache-control "public, max-age=31536000, immutable"
+
+      - name: Upload entrypoint files (no-cache)
+        run: |
+          aws s3 cp frontend/index.html "s3://$S3_BUCKET/index.html" \
+            --cache-control "no-cache" --content-type "text/html"
+          aws s3 cp frontend/config.js "s3://$S3_BUCKET/config.js" \
+            --cache-control "no-cache" --content-type "application/javascript"
+
+      - name: Invalidate CloudFront (nếu có)
+        if: ${{ vars.CLOUDFRONT_DISTRIBUTION_ID != '' }}
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id "${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}" \
+            --paths "/*"
