@@ -57,29 +57,40 @@ Hai workflow trong `.github/workflows/` tự chạy khi push lên `main`:
 | `deploy-backend.yml`  | `backend/**`  | `go vet`/`build` → build Docker → push lên **ECR** (tag `latest` + git SHA) |
 | `deploy-frontend.yml` | `frontend/**` | `aws s3 sync` lên **S3** → (tuỳ chọn) invalidate CloudFront |
 
-### Cần cấu hình 1 lần
+### Xác thực bằng OIDC (không cần access key)
 
-**Secrets** (Settings → Secrets and variables → Actions → *Secrets*):
+Workflow assume IAM role `arn:aws:iam::028708951757:role/GitHub-CI-ECR` qua OIDC — GitHub tự lấy token tạm thời, **không lưu access key** trong repo.
 
-| Secret | Giá trị |
-|--------|---------|
-| `AWS_ACCESS_KEY_ID`     | Access key của IAM user dùng để deploy |
-| `AWS_SECRET_ACCESS_KEY` | Secret key tương ứng |
+Điều kiện để role hoạt động (làm 1 lần trong AWS):
 
-**Variables** (tab *Variables*, tuỳ chọn):
+1. Tạo **OIDC provider** cho GitHub trong IAM (nếu chưa có):
+   - Provider URL: `https://token.actions.githubusercontent.com`
+   - Audience: `sts.amazonaws.com`
+2. **Trust policy** của role cho phép repo này assume:
+   ```json
+   {
+     "Effect": "Allow",
+     "Principal": { "Federated": "arn:aws:iam::028708951757:oidc-provider/token.actions.githubusercontent.com" },
+     "Action": "sts:AssumeRoleWithWebIdentity",
+     "Condition": {
+       "StringEquals": { "token.actions.githubusercontent.com:aud": "sts.amazonaws.com" },
+       "StringLike": { "token.actions.githubusercontent.com:sub": "repo:seta-nguyenhieu7227/demo:*" }
+     }
+   }
+   ```
+3. **Permission policy** của role: `ecr:*` (push/create-repo), `s3:PutObject/DeleteObject/ListBucket` trên bucket, và `cloudfront:CreateInvalidation` nếu dùng CloudFront.
+
+**Sửa trong file workflow** cho khớp tài khoản (phần `env:` ở đầu mỗi file):
+- `AWS_REGION` — ví dụ `ap-southeast-1`
+- `AWS_ROLE_ARN` — role assume qua OIDC (đang là role ở trên)
+- `ECR_REPOSITORY` — tên repo ECR (workflow tự tạo nếu chưa có)
+- `S3_BUCKET` — tên bucket FE
+
+**Variable tuỳ chọn** (Settings → Secrets and variables → Actions → *Variables*):
 
 | Variable | Ý nghĩa |
 |----------|---------|
 | `CLOUDFRONT_DISTRIBUTION_ID` | Có thì FE deploy xong sẽ tự invalidate cache |
-
-**Sửa trong file workflow** cho khớp tài khoản (phần `env:` ở đầu mỗi file):
-- `AWS_REGION` — ví dụ `ap-southeast-1`
-- `ECR_REPOSITORY` — tên repo ECR (workflow tự tạo nếu chưa có)
-- `S3_BUCKET` — tên bucket FE
-
-IAM user cần quyền tối thiểu: `ecr:*` (hoặc push/create-repo), `s3:PutObject/DeleteObject/ListBucket` trên bucket, và `cloudfront:CreateInvalidation` nếu dùng CloudFront.
-
-> Muốn an toàn hơn (không lưu access key tĩnh): chuyển sang **OIDC** — thêm `permissions: id-token: write` và dùng `role-to-assume` thay cho cặp access key.
 
 ### Chạy tay
 

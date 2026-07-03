@@ -12,20 +12,21 @@ on:
 env:
   AWS_REGION: ap-southeast-1
   S3_BUCKET: my-todo-frontend-bucket
+  AWS_ROLE_ARN: arn:aws:iam::028708951757:role/GitHub-CI-ECR
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     permissions:
+      id-token: write   # bắt buộc để lấy OIDC token
       contents: read
     steps:
       - uses: actions/checkout@v4
 
-      - name: Configure AWS credentials
+      - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Sync static assets (cache 1 năm)
