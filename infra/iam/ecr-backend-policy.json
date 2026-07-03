@@ -27,7 +27,7 @@
         "ecr:PutImage",
         "ecr:BatchGetImage"
       ],
-      "Resource": "arn:aws:ecr:ap-southeast-1:028708951757:repository/todo-backend"
+      "Resource": "arn:aws:ecr:ap-southeast-1:028708951757:repository/demo"
     }
   ]
 }

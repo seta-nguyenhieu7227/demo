@@ -11,7 +11,7 @@ on:
 # Sửa các giá trị này cho đúng tài khoản của bạn (hoặc set thành GitHub Variables).
 env:
   AWS_REGION: ap-southeast-1
-  ECR_REPOSITORY: todo-backend
+  ECR_REPOSITORY: demo
   AWS_ROLE_ARN: arn:aws:iam::028708951757:role/GitHub-CI-ECR
 
 jobs:
