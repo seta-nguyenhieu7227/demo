@@ -11,7 +11,7 @@ on:
 # Sửa cho đúng của bạn (hoặc set thành GitHub Variables).
 env:
   AWS_REGION: ap-southeast-1
-  S3_BUCKET: my-todo-frontend-bucket
+  S3_BUCKET: fe-demo-test
   AWS_ROLE_ARN: arn:aws:iam::028708951757:role/GitHub-CI-ECR
 
 jobs:
