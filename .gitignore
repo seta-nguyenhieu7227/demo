@@ -1,0 +1,10 @@
+# Secrets / local env
+backend/.env
+.env
+
+# Go
+/backend/server
+*.exe
+
+# OS / editor
+.DS_Store
