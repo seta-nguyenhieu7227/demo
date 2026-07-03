@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="vi">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Todo List</title>
+        <link rel="stylesheet" href="style.css" />
+    </head>
+    <body>
+        <main class="app">
+            <h1>Todo List</h1>
+
+            <form id="add-form" class="add-form">
+                <input
+                    id="new-title"
+                    type="text"
+                    placeholder="Thêm việc cần làm..."
+                    autocomplete="off"
+                    required
+                />
+                <button type="submit">Thêm</button>
+            </form>
+
+            <p id="status" class="status"></p>
+            <ul id="list" class="list"></ul>
+        </main>
+
+        <script src="config.js"></script>
+        <script src="app.js"></script>
+    </body>
+</html>

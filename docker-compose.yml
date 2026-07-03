@@ -1,0 +1,34 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: todo
+    ports:
+      - "5433:5432"
+    volumes:
+      # Tự động tạo bảng lần đầu khởi tạo volume
+      - ./backend/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d todo"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build: ./backend
+    environment:
+      # Trong docker, host của DB là tên service "db"
+      DATABASE_URL: "postgres://postgres:pass@db:5432/todo?sslmode=disable"
+      PORT: "8080"
+      ALLOWED_ORIGIN: "*"
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
